@@ -24,7 +24,7 @@ services:
       TZ: ${TZ:-America/New_York}
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
-      SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      FLATNOTES_SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
       FLATNOTES_AUTH_TYPE: ${FLATNOTES_AUTH_TYPE:-password}
       FLATNOTES_USERNAME: ${APP_ADMIN_USER:-admin}
       FLATNOTES_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
