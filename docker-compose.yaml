@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8095
 
+name: flatnotes
 x-logging: &default-logging
   driver: json-file
   options:
@@ -8,27 +9,32 @@ x-logging: &default-logging
 
 services:
   flatnotes:
-    image: flatnotes/flatnotes:latest
+    image: dullage/flatnotes:latest
+    pull_policy: always
     container_name: flatnotes-app
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     networks:
       - flatnotes
     ports:
-      - "8095:8095"
+      - "172.17.0.1:8095:8080"
     environment:
       TZ: ${TZ:-America/New_York}
       PUID: ${SERVICE_USER:-1000}
       PGID: ${SERVICE_GROUP:-1000}
+      SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      FLATNOTES_AUTH_TYPE: ${FLATNOTES_AUTH_TYPE:-password}
+      FLATNOTES_USERNAME: ${APP_ADMIN_USER:-admin}
+      FLATNOTES_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - ./volumes/config/flatnotes:/config
       - ./volumes/data/flatnotes:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8095"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
       timeout: 10s
       retries: 3
 
 networks:
   flatnotes:
+    name: flatnotes
     external: false
