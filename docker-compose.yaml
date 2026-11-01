@@ -1,64 +1,44 @@
-# nginx proxy address - http://172.17.0.1:8095
+# nginx proxy address - http://172.17.0.1:64173
 
 name: flatnotes
 x-logging: &default-logging
-  driver: json-file
   options:
-    max-size: "5m"
-    max-file: "1"
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
 
 services:
   flatnotes:
     image: dullage/flatnotes:latest
-    pull_policy: always
     container_name: flatnotes-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
+    pull_policy: always
     logging: *default-logging
-    networks:
-      - flatnotes
-      - proxy
-      - cloudflare
-    ports:
-      - "172.17.0.1:8095:8080"
     environment:
       TZ: ${TZ:-America/New_York}
-      PUID: ${SERVICE_USER:-1000}
-      PGID: ${SERVICE_GROUP:-1000}
-      FLATNOTES_SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
-      FLATNOTES_AUTH_TYPE: ${FLATNOTES_AUTH_TYPE:-password}
-      FLATNOTES_USERNAME: ${APP_ADMIN_USER:-admin}
-      FLATNOTES_PASSWORD: ${APP_ADMIN_PASS:-changeme_admin_password}
       CONTAINER_NAME: flatnotes-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      PUID: ${SERVICE_USER:-1000}
+      PGID: ${SERVICE_GROUP:-1000}
+      FLATNOTES_SECRET_KEY: ${APP_SECRET_KEY:-replace-with-a-random-32-character-secret}
+      FLATNOTES_AUTH_TYPE: ${FLATNOTES_AUTH_TYPE:-password}
+      FLATNOTES_USERNAME: ${APP_ADMIN_USER:-admin}
+      FLATNOTES_PASSWORD: ${APP_ADMIN_PASS:-replace-with-a-random-password}
+    ports:
+      - '172.17.0.1:64173:8080'
     volumes:
-      - ./volumes/data/flatnotes:/data
+      - './volumes/data/flatnotes:/data'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080']
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://flatnotes-app:8080'
-      - 'cloudflare.hostname=flatnotes.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.flatnotes-app.entrypoints=http'
-      - 'traefik.http.routers.flatnotes-app-secure.tls=true'
-      - 'traefik.http.routers.flatnotes-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.flatnotes-app-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.flatnotes-app.middlewares=flatnotes-app-https-redirect'
-      - 'traefik.http.routers.flatnotes-app-secure.entrypoints=https'
-      - 'traefik.http.routers.flatnotes-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.flatnotes-app-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.flatnotes-app-secure.service=flatnotes-app'
-      - 'traefik.http.services.flatnotes-app.loadbalancer.server.port=8080'
+    networks:
+      - flatnotes
 
 networks:
   flatnotes:
     name: flatnotes
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true

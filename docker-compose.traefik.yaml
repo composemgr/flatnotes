@@ -1,0 +1,55 @@
+name: flatnotes
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  flatnotes:
+    image: dullage/flatnotes:latest
+    container_name: flatnotes-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: flatnotes-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      PUID: ${SERVICE_USER:-1000}
+      PGID: ${SERVICE_GROUP:-1000}
+      FLATNOTES_SECRET_KEY: ${APP_SECRET_KEY:-replace-with-a-random-32-character-secret}
+      FLATNOTES_AUTH_TYPE: ${FLATNOTES_AUTH_TYPE:-password}
+      FLATNOTES_USERNAME: ${APP_ADMIN_USER:-admin}
+      FLATNOTES_PASSWORD: ${APP_ADMIN_PASS:-replace-with-a-random-password}
+    volumes:
+      - './volumes/data/flatnotes:/data'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.flatnotes-app.entrypoints=http'
+      - 'traefik.http.routers.flatnotes-app.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.routers.flatnotes-app.middlewares=flatnotes-app-https-redirect'
+      - 'traefik.http.middlewares.flatnotes-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.flatnotes-app-secure.entrypoints=https'
+      - 'traefik.http.routers.flatnotes-app-secure.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.routers.flatnotes-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.flatnotes-app-secure.service=flatnotes-app'
+      - 'traefik.http.services.flatnotes-app.loadbalancer.server.port=8080'
+    networks:
+      - flatnotes
+      - traefik
+
+networks:
+  flatnotes:
+    name: flatnotes
+    external: false
+  traefik:
+    external: true
